@@ -25,7 +25,7 @@ static const char *colors[][3]      = {
 	[SchemeNorm] = { col_gray3, col_gray1, col_gray2 },
 	[SchemeSel]  = { col_gray4, col_cyan,  col_cyan  },
 };
-
+static const double solidopacity	= 1.0;
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
@@ -34,12 +34,11 @@ static const Rule rules[] = {
 	 *	WM_CLASS(STRING) = instance, class
 	 *	WM_NAME(STRING) = title
 	 */
-	/* class     instance  title           tags mask  isfloating  isterminal  noswallow  monitor */
-	{ "Gimp",    NULL,     NULL,           0,         1,          0,           0,        -1 },
-	{ "Firefox", NULL,     NULL,           1 << 8,    0,          0,          -1,        -1 },
-	{ "qtcreator",NULL,     NULL,          0,    	  0,          0,          -1,        -1 },
-	{ "Alacritty",NULL,     NULL,          0,         0,          1,           0,        -1 },
-	{ NULL,      NULL,     "Event Tester", 0,         0,          0,           1,        -1 }, /* xev */
+	/* class     instance  title           		tags mask  isfloating  isterminal  noswallow 	opacity 			monitor */
+	{ "firefox",  NULL,     NULL,                       0,    	  0,          0,            0,        	solidopacity,			-1 },
+	{ "QtCreator",NULL,     NULL,          	            0,    	  0,          0,            0,        	solidopacity,			-1 },
+	{ "Alacritty",NULL,     NULL,                       0,        	  0,          1,            1,        	defaultopacity,			-1 },
+	{ "code-oss", NULL,	NULL,                       0,	      	  0,	      0,	    0,		solidopacity,			-1},
 };
 
 /* layout(s) */
