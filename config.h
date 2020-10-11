@@ -18,7 +18,7 @@ static const char col_gray2[]       = "#444444";
 static const char col_gray3[]       = "#bbbbbb";
 static const char col_gray4[]       = "#eeeeee";
 static const char col_cyan[]        = "#005577";
-static const double defaultopacity  = 0.3;
+static const double defaultopacity  = 0.8;
 static const char dmenu_lines[]	    = "15";
 static const char *colors[][3]      = {
 	/*               fg         bg         border   */
@@ -81,7 +81,7 @@ static const char *termcmd[]  = { "/usr/bin/alacritty", NULL };
 static Key keys[] = {
 	/* modifier                     key        function        argument */
 	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
-	{ MODKEY,             			XK_Return, spawn,          {.v = termcmd } },
+	{ MODKEY,             		XK_Return, spawn,          {.v = termcmd } },
 	{ MODKEY,                       XK_b,      togglebar,      {0} },
 	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
 	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
@@ -117,6 +117,7 @@ static Key keys[] = {
 	{ MODKEY,                       XK_period, focusmon,       {.i = +1 } },
 	{ MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
 	{ MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
+	{ MODKEY|ShiftMask,             XK_w, 	   spawn,          SHCMD("/usr/sbin/wallchanger") },
 	TAGKEYS(                        XK_1,                      0)
 	TAGKEYS(                        XK_2,                      1)
 	TAGKEYS(                        XK_3,                      2)
@@ -128,7 +129,7 @@ static Key keys[] = {
 	TAGKEYS(                        XK_9,                      8)
 	{ MODKEY|ShiftMask,             XK_BackSpace, quit,        {0} },
 	STACKKEYS(MODKEY,                          focus)
-    STACKKEYS(MODKEY|ShiftMask,                push)
+    	STACKKEYS(MODKEY|ShiftMask,                push)
 
 };
 
