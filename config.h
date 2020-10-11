@@ -37,8 +37,8 @@ static const Rule rules[] = {
 	/* class     instance  title           		tags mask  isfloating  isterminal  noswallow 	opacity 			monitor */
 	{ "firefox",  NULL,     NULL,                       0,    	  0,          0,            0,        	solidopacity,			-1 },
 	{ "QtCreator",NULL,     NULL,          	            0,    	  0,          0,            0,        	solidopacity,			-1 },
-	{ "Alacritty",NULL,     NULL,                       0,        0,          1,            1,        	defaultopacity,			-1 },
-	{ "code-oss", NULL,	NULL,                       	0,	      0,	      0,	   		0,		solidopacity,			-1},
+	{ "Alacritty",NULL,     NULL,                       0,        	  0,          1,            1,        	defaultopacity,			-1 },
+	{ "code-oss", NULL,	NULL,                       0,	      	  0,	      0,	    0,		solidopacity,			-1},
 };
 
 /* layout(s) */
