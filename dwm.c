@@ -339,15 +339,12 @@ applyrules(Client *c)
 	XGetClassHint(dpy, c->win, &ch);
 	class    = ch.res_class ? ch.res_class : broken;
 	instance = ch.res_name  ? ch.res_name  : broken;
-	fprintf(stderr, "\nwindow: name %s, class %s, instance %s \n", c->name, class, instance);
 	for (i = 0; i < LENGTH(rules); i++) {
 		r = &rules[i];
-		fprintf(stderr, "checking rule: name %s, class %s, instance %s \n", r->title, r->class, r->instance);
 		if ((!r->title || strstr(c->name, r->title))
 		&& (!r->class || strstr(class, r->class))
 		&& (!r->instance || strstr(instance, r->instance)))
 		{
-			fprintf(stderr, "\n RULE MATCHES, opacity is %.6f, noswallow is %d\n", r->opacity, r->noswallow);
 			c->isfloating = r->isfloating;
 			c->isterminal = r->isterminal;
 			c->noswallow  = r->noswallow;
@@ -358,7 +355,6 @@ applyrules(Client *c)
 				c->mon = m;
 		}
 	}
-	fprintf(stderr, "\n AFTER LOOP %s, opacity is %.6f\n", class ,c->opacity);
 	if (ch.res_class)
 		XFree(ch.res_class);
 	if (ch.res_name)
@@ -1271,7 +1267,6 @@ nexttiled(Client *c)
 void
 opacity(Client *c, double opacity)
 {
-	fprintf(stderr, "%s has %.6f opacity\n", c->name, c->opacity);
 	if(opacity >= 0 && opacity <= 1) {
 		unsigned long real_opacity[] = { opacity * 0xffffffff };
 		XChangeProperty(dpy, c->win, netatom[NetWMWindowsOpacity], XA_CARDINAL,
