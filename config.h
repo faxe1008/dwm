@@ -11,14 +11,14 @@ static const unsigned int gappoh    = 7;       /* horiz outer gap between window
 static const unsigned int gappov    = 7;       /* vert outer gap between windows and screen edge */
 static const int smartgaps          = 0;        /* 1 means no outer gap when there is only one window */
 static const int swallowfloating    = 0;        /* 1 means swallow floating windows by default */
-static const char *fonts[]          = { "FontAwesome:size=10" };
-static const char dmenufont[]       = "monospace:size=10";
+static const char *fonts[]          = { "FontAwesome:size=10:antialias=true" };
+static const char dmenufont[]       = "FontAwesome:size=10:antialias=true";
 static const char col_gray1[]       = "#222222";
 static const char col_gray2[]       = "#444444";
 static const char col_gray3[]       = "#bbbbbb";
 static const char col_gray4[]       = "#eeeeee";
 static const char col_cyan[]        = "#005577";
-static const double defaultopacity  = 0.8;
+static const double defaultopacity  = 0.75;
 static const char dmenu_lines[]	    = "15";
 static const char *colors[][3]      = {
 	/*               fg         bg         border   */
@@ -118,6 +118,8 @@ static Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
 	{ MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
 	{ MODKEY|ShiftMask,             XK_w, 	   spawn,          SHCMD("/usr/sbin/wallchanger") },
+	{ MODKEY|ShiftMask,				XK_KP_Add, 		changeopacity,	{.f = +0.1}},
+	{ MODKEY|ShiftMask,				XK_KP_Subtract, changeopacity,  {.f = -0.1}},
 	TAGKEYS(                        XK_1,                      0)
 	TAGKEYS(                        XK_2,                      1)
 	TAGKEYS(                        XK_3,                      2)
