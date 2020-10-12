@@ -1165,14 +1165,6 @@ loadxrdb()
         XRDB_LOAD_COLOR("dwm.selbordercolor", selbordercolor);
         XRDB_LOAD_COLOR("dwm.selbgcolor", selbgcolor);
         XRDB_LOAD_COLOR("dwm.selfgcolor", selfgcolor);
-		
-		fprintf(stderr, "\n normbordercolor: %s\n", normbordercolor);
-		fprintf(stderr, "\n normbgcolor: %s\n", normbgcolor);
-		fprintf(stderr, "\n normfgcolor: %s\n", normfgcolor);
-		fprintf(stderr, "\n selbordercolor: %s\n", selbordercolor);
-		fprintf(stderr, "\n selbgcolor: %s\n", selbgcolor);
-		fprintf(stderr, "\n selfgcolor: %s\n", selfgcolor);
-
       }
     }
   }
