@@ -11,7 +11,10 @@ static const unsigned int gappoh    = 7;       /* horiz outer gap between window
 static const unsigned int gappov    = 7;       /* vert outer gap between windows and screen edge */
 static const int smartgaps          = 0;        /* 1 means no outer gap when there is only one window */
 static const int swallowfloating    = 0;        /* 1 means swallow floating windows by default */
-static const char *fonts[]          = { "FontAwesome:size=10:antialias=true" };
+static const char *fonts[]          = { 
+	"monospace:size=10:antialias=true", 
+	"JoyPixels:pixelsize=10:antialias=true:autohint=true"
+};
 static const char dmenufont[]       = "FontAwesome:size=10:antialias=true";
 static char normbgcolor[]       	= "#222222";
 static char normbordercolor[]       = "#444444";
