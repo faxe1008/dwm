@@ -13,6 +13,7 @@ static const int smartgaps          = 0;        /* 1 means no outer gap when the
 static const int swallowfloating    = 0;        /* 1 means swallow floating windows by default */
 static const char *fonts[]          = { 
 	"FontAwesome:size=10:antialias=true",
+	"JoyPixels:pixelsize=10:antialias=true:autohint=true"
 };
 static const char dmenufont[]       = "FontAwesome:size=10:antialias=true";
 static char normbgcolor[]       	= "#222222";
