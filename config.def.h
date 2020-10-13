@@ -11,7 +11,9 @@ static const unsigned int gappoh    = 7;       /* horiz outer gap between window
 static const unsigned int gappov    = 7;       /* vert outer gap between windows and screen edge */
 static const int smartgaps          = 0;        /* 1 means no outer gap when there is only one window */
 static const int swallowfloating    = 0;        /* 1 means swallow floating windows by default */
-static const char *fonts[]          = { "FontAwesome:size=10:antialias=true" };
+static const char *fonts[]          = { 
+	"FontAwesome:size=10:antialias=true",
+};
 static const char dmenufont[]       = "FontAwesome:size=10:antialias=true";
 static char normbgcolor[]       	= "#222222";
 static char normbordercolor[]       = "#444444";
@@ -52,6 +54,9 @@ static const Layout layouts[] = {
 	{ "[]=",      tile },    /* first entry is default */
 	{ "><>",      NULL },    /* no layout function means floating behavior */
 	{ "|M|",      centeredmaster },
+	{ "TTT",      bstack },	 /* Master on top, slaves on bottom */
+	{ "[@]",      spiral }, /* Fibonacci spiral */
+	{ "H[]",      deck },	/* Master on left, slaves in monocle-like mode on right */
 };
 
 #define MODKEY Mod4Mask
@@ -83,15 +88,18 @@ static Key keys[] = {
 	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
 	{ MODKEY,             		XK_Return, spawn,          {.v = termcmd } },
 	{ MODKEY,                       XK_b,      togglebar,      {0} },
-	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
-	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
+	//{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
+	//{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
 	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
 	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
 	{ MODKEY,                       XK_Tab,    view,           {0} },
 	{ MODKEY,             			XK_q,      killclient,     {0} },
 	{ MODKEY|ShiftMask,             XK_t,      setlayout,      {.v = &layouts[0]} },
 	{ MODKEY|ShiftMask,             XK_f,      setlayout,      {.v = &layouts[1]} },
-	{ MODKEY|ShiftMask,             XK_m,      setlayout,      {.v = &layouts[2]} },
+	{ MODKEY|ShiftMask,             XK_m,      setlayout,      {.v = &layouts[2]} },	
+	{ MODKEY|ShiftMask,             XK_b,      setlayout,      {.v = &layouts[3]} },	
+	{ MODKEY|ShiftMask,             XK_s,      setlayout,      {.v = &layouts[4]} },	
+	{ MODKEY|ShiftMask,             XK_d,      setlayout,      {.v = &layouts[5]} },
 	{ MODKEY,                       XK_space,  setlayout,      {0} },
 	{ MODKEY|ShiftMask,             XK_space,  togglefloating, {0} },
 	{ MODKEY,             			XK_f,      togglefullscr,  {0} },

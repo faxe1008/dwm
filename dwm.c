@@ -193,6 +193,7 @@ static void arrangemon(Monitor *m);
 static void attach(Client *c);
 static void attachstack(Client *c);
 static void buttonpress(XEvent *e);
+static void bstack(Monitor *m);
 static void checkotherwm(void);
 static void cleanup(void);
 static void cleanupmon(Monitor *mon);
@@ -202,6 +203,7 @@ static void configure(Client *c);
 static void configurenotify(XEvent *e);
 static void configurerequest(XEvent *e);
 static Monitor *createmon(void);
+static void deck(Monitor *m);
 static void destroynotify(XEvent *e);
 static void detach(Client *c);
 static void detachstack(Client *c);
@@ -210,6 +212,7 @@ static void drawbar(Monitor *m);
 static void drawbars(void);
 static void enternotify(XEvent *e);
 static void expose(XEvent *e);
+static void fibonacci(Monitor *m, int s);
 static int fake_signal(void);
 static void focus(Client *c);
 static void focusin(XEvent *e);
@@ -243,6 +246,7 @@ static void resizeclient(Client *c, int x, int y, int w, int h);
 static void resizemouse(const Arg *arg);
 static void restack(Monitor *m);
 static void run(void);
+static void spiral(Monitor *m);
 static void scan(void);
 static int sendevent(Client *c, Atom proto);
 static void sendmon(Client *c, Monitor *m);
@@ -297,6 +301,7 @@ static void incrihgaps(const Arg *arg);
 static void incrivgaps(const Arg *arg);
 static void togglegaps(const Arg *arg);
 static void defaultgaps(const Arg *arg);
+static void getfacts(Monitor *m, int msize, int ssize, float *mf, float *sf, int *mr, int *sr);
 static void getgaps(Monitor *m, int *oh, int *ov, int *ih, int *iv, unsigned int *nc);
 
 static pid_t getparentprocess(pid_t p);
@@ -489,6 +494,49 @@ attachstack(Client *c)
 	c->snext = c->mon->stack;
 	c->mon->stack = c;
 }
+
+static void
+bstack(Monitor *m)
+{
+	unsigned int i, n;
+	int mx = 0, my = 0, mh = 0, mw = 0;
+	int sx = 0, sy = 0, sh = 0, sw = 0;
+	float mfacts, sfacts;
+	int mrest, srest;
+	Client *c;
+
+	int oh, ov, ih, iv;
+	getgaps(m, &oh, &ov, &ih, &iv, &n);
+
+	if (n == 0)
+		return;
+
+	sx = mx = m->wx + ov;
+	sy = my = m->wy + oh;
+	sh = mh = m->wh - 2*oh;
+	mw = m->ww - 2*ov - iv * (MIN(n, m->nmaster) - 1);
+	sw = m->ww - 2*ov - iv * (n - m->nmaster - 1);
+
+	if (m->nmaster && n > m->nmaster) {
+		sh = (mh - ih) * (1 - m->mfact);
+		mh = (mh - ih) * m->mfact;
+		sx = mx;
+		sy = my + mh + ih;
+	}
+
+	getfacts(m, mw, sw, &mfacts, &sfacts, &mrest, &srest);
+
+	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++) {
+		if (i < m->nmaster) {
+			resize(c, mx, my, (mw / mfacts) + (i < mrest ? 1 : 0) - (2*c->bw), mh - (2*c->bw), 0);
+			mx += WIDTH(c) + iv;
+		} else {
+			resize(c, sx, sy, (sw / sfacts) + ((i - m->nmaster) < srest ? 1 : 0) - (2*c->bw), sh - (2*c->bw), 0);
+			sx += WIDTH(c) + iv;
+		}
+	}
+}
+
 
 void
 buttonpress(XEvent *e)
@@ -738,6 +786,48 @@ createmon(void)
 	return m;
 }
 
+static void
+deck(Monitor *m)
+{
+	unsigned int i, n;
+	int mx = 0, my = 0, mh = 0, mw = 0;
+	int sx = 0, sy = 0, sh = 0, sw = 0;
+	float mfacts, sfacts;
+	int mrest, srest;
+	Client *c;
+
+	int oh, ov, ih, iv;
+	getgaps(m, &oh, &ov, &ih, &iv, &n);
+
+	if (n == 0)
+		return;
+
+	sx = mx = m->wx + ov;
+	sy = my = m->wy + oh;
+	sh = mh = m->wh - 2*oh - ih * (MIN(n, m->nmaster) - 1);
+	sw = mw = m->ww - 2*ov;
+
+	if (m->nmaster && n > m->nmaster) {
+		sw = (mw - iv) * (1 - m->mfact);
+		mw = (mw - iv) * m->mfact;
+		sx = mx + mw + iv;
+		sh = m->wh - 2*oh;
+	}
+
+	getfacts(m, mh, sh, &mfacts, &sfacts, &mrest, &srest);
+
+	if (n - m->nmaster > 0) /* override layout symbol */
+		snprintf(m->ltsymbol, sizeof m->ltsymbol, "D %d", n - m->nmaster);
+
+	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
+		if (i < m->nmaster) {
+			resize(c, mx, my, mw - (2*c->bw), (mh / mfacts) + (i < mrest ? 1 : 0) - (2*c->bw), 0);
+			my += HEIGHT(c) + ih;
+		} else {
+			resize(c, sx, sy, sw - (2*c->bw), sh - (2*c->bw), 0);
+		}
+}
+
 void
 destroynotify(XEvent *e)
 {
@@ -875,6 +965,68 @@ expose(XEvent *e)
 
 	if (ev->count == 0 && (m = wintomon(ev->window)))
 		drawbar(m);
+}
+
+static void
+fibonacci(Monitor *m, int s)
+{
+	unsigned int i, n;
+	int nx, ny, nw, nh;
+	int oh, ov, ih, iv;
+	Client *c;
+
+	getgaps(m, &oh, &ov, &ih, &iv, &n);
+
+	if (n == 0)
+		return;
+
+	nx = m->wx + ov;
+	ny = oh;
+	nw = m->ww - 2*ov;
+	nh = m->wh - 2*oh;
+
+	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next)) {
+		if ((i % 2 && nh / 2 > 2*c->bw)
+		   || (!(i % 2) && nw / 2 > 2*c->bw)) {
+			if (i < n - 1) {
+				if (i % 2)
+					nh = (nh - ih) / 2;
+				else
+					nw = (nw - iv) / 2;
+
+				if ((i % 4) == 2 && !s)
+					nx += nw + iv;
+				else if ((i % 4) == 3 && !s)
+					ny += nh + ih;
+			}
+			if ((i % 4) == 0) {
+				if (s)
+					ny += nh + ih;
+				else
+					ny -= nh + ih;
+			}
+			else if ((i % 4) == 1)
+				nx += nw + iv;
+			else if ((i % 4) == 2)
+				ny += nh + ih;
+			else if ((i % 4) == 3) {
+				if (s)
+					nx += nw + iv;
+				else
+					nx -= nw + iv;
+			}
+			if (i == 0)	{
+				if (n != 1)
+					nw = (m->ww - 2*ov - iv) * m->mfact;
+				ny = m->wy + oh;
+			}
+			else if (i == 1)
+				nw = m->ww - nw - iv - 2*ov;
+			i++;
+		}
+
+		resize(c, nx, ny, nw - (2*c->bw), nh - (2*c->bw), False);
+	}
 }
 
 int
@@ -1612,6 +1764,12 @@ run(void)
 	while (running && !XNextEvent(dpy, &ev))
 		if (handler[ev.type])
 			handler[ev.type](&ev); /* call handler */
+}
+
+static void
+spiral(Monitor *m)
+{
+	fibonacci(m, 0);
 }
 
 void
@@ -2529,6 +2687,30 @@ zoom(const Arg *arg)
 		if (!c || !(c = nexttiled(c->next)))
 			return;
 	pop(c);
+}
+
+void
+getfacts(Monitor *m, int msize, int ssize, float *mf, float *sf, int *mr, int *sr)
+{
+	unsigned int n;
+	float mfacts, sfacts;
+	int mtotal = 0, stotal = 0;
+	Client *c;
+
+	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
+	mfacts = MIN(n, m->nmaster);
+	sfacts = n - m->nmaster;
+
+	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++)
+		if (n < m->nmaster)
+			mtotal += msize / mfacts;
+		else
+			stotal += ssize / sfacts;
+
+	*mf = mfacts; // total factor of master area
+	*sf = sfacts; // total factor of stack area
+	*mr = msize - mtotal; // the remainder (rest) of pixels after an even master split
+	*sr = ssize - stotal; // the remainder (rest) of pixels after an even stack split
 }
 
 static void
