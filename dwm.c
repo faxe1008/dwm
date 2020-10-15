@@ -30,6 +30,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
+#include <proc/readproc.h>
 #include <X11/cursorfont.h>
 #include <X11/keysym.h>
 #include <X11/Xatom.h>
@@ -261,6 +263,7 @@ static void pushstack(const Arg *arg);
 static void showhide(Client *c);
 static void sigchld(int unused);
 static void spawn(const Arg *arg);
+static void spawn_ssh_aware(const Arg *arg);
 static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void tile(Monitor *);
@@ -310,6 +313,12 @@ static Client *swallowingclient(Window w);
 static Client *termforwin(const Client *c);
 static void xrdb(const Arg *arg);
 static pid_t winpid(Window w);
+
+static int str_to_pid(char* s, pid_t* pid);
+static char* check_ssh_session(pid_t process);
+static int get_proc_info(pid_t pid, proc_t* proc_info);
+static int check_parents(pid_t pid, pid_t target);
+
 
 /* variables */
 static const char broken[] = "broken";
@@ -2029,6 +2038,24 @@ sigchld(int unused)
 	while (0 < waitpid(-1, NULL, WNOHANG));
 }
 
+void spawn_ssh_aware(const Arg *arg)
+{
+	if(selmon->sel){
+		char* ssh_cmdline = check_ssh_session(selmon->sel->pid);
+		if(ssh_cmdline){
+			fprintf(stderr, "%s\n", ssh_cmdline);
+			const char* sshcmd[] = { "/usr/bin/alacritty", "-e" , "/bin/bash", "-c", ssh_cmdline, NULL };
+			Arg a = {.v=sshcmd};
+			spawn(&a);
+			free(ssh_cmdline);
+		}else{
+		        spawn(arg);
+		}
+	}else{
+		spawn(arg);
+	}
+}
+
 void
 spawn(const Arg *arg)
 {
@@ -3017,6 +3044,103 @@ unswallow(Client *c)
 	arrange(c->mon);
 }
 
+
+int str_to_pid(char* s, pid_t* pid){
+	long result = 0;
+	char *eptr;
+	if(!pid)
+		return 0;
+	result = strtol(s, &eptr, 10);
+	if((eptr && *eptr!='\0') || errno == ERANGE)
+		return 0;
+	*pid=(pid_t) result;
+	return 1;
+}
+
+int get_proc_info(pid_t pid, proc_t* proc_info){
+   int res = 1;
+   if(!proc_info)
+	   return 0;
+   PROCTAB *pt_ptr = openproc(PROC_FILLARG | PROC_EDITCMDLCVT | PROC_FILLSTATUS | PROC_PID, &pid);
+   if(readproc(pt_ptr, proc_info))
+	res = 0;
+
+   closeproc(pt_ptr);
+   return res;
+}
+
+int check_parents(pid_t pid, pid_t target){
+	proc_t* pinf = malloc(sizeof(proc_t));
+	memset(pinf, 0, sizeof(proc_t));
+	pid_t current = pid;
+
+	while(current!=(pid_t)0 && current!=(pid_t)1 && current!=target){
+		get_proc_info(current, pinf);
+		current = pinf->ppid;
+	}
+	freeproc(pinf);
+	if(current==target)
+		return 1;
+	return 0;
+}
+
+char* check_ssh_session(pid_t process){
+ struct dirent *dp;
+ DIR *dfd;
+ const char *dir = "/proc";
+ char filename_qfd[100] ;
+ pid_t pid;
+ proc_t process_info;
+ memset(&process_info, 0, sizeof(proc_t));
+ struct stat stbuf;
+ char* res = 0;
+
+ if ((dfd = opendir(dir)) == NULL)
+ {
+  fprintf(stderr, "Can't open %s\n", dir);
+  return 0;
+ }
+
+
+ while ((dp = readdir(dfd)) != NULL && res == 0)
+ {
+  sprintf( filename_qfd , "%s/%s",dir,dp->d_name) ;
+  if( stat(filename_qfd,&stbuf ) == -1 )
+  {
+   printf("Unable to stat file: %s\n",filename_qfd) ;
+   continue;
+  }
+  if ( ((stbuf.st_mode & S_IFMT) == S_IFDIR) && str_to_pid(dp->d_name, &pid))
+  {
+	get_proc_info(pid, &process_info);	
+	if(!process_info.cmdline)
+		continue;
+	char* cmdline = *process_info.cmdline;
+	
+	if(strncmp("ssh ", cmdline, 4) == 0 && check_parents(pid, process)){
+		res = calloc(strlen(cmdline)+1, sizeof(char));
+		strcpy(res, cmdline);
+	}
+	
+  }
+ }
+ if (process_info.environ)  free((void*)*process_info.environ);
+ if (process_info.cmdline)  free((void*)*process_info.cmdline);
+ if (process_info.cgroup)   free((void*)*process_info.cgroup);
+ if (process_info.cgname)   free(process_info.cgname);
+ if (process_info.supgid)   free(process_info.supgid);
+ if (process_info.supgrp)   free(process_info.supgrp);
+ if (process_info.sd_mach)  free(process_info.sd_mach);
+ if (process_info.sd_ouid)  free(process_info.sd_ouid);
+ if (process_info.sd_seat)  free(process_info.sd_seat);
+ if (process_info.sd_sess)  free(process_info.sd_sess);
+ if (process_info.sd_slice) free(process_info.sd_slice);
+ if (process_info.sd_unit)  free(process_info.sd_unit);
+ if (process_info.sd_uunit) free(process_info.sd_uunit);
+
+ free(dfd);
+ return res;
+}
 
 int
 main(int argc, char *argv[])
