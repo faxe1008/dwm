@@ -3070,8 +3070,7 @@ int get_proc_info(pid_t pid, proc_t* proc_info){
 }
 
 int check_parents(pid_t pid, pid_t target){
-	proc_t* pinf = malloc(sizeof(proc_t));
-	memset(pinf, 0, sizeof(proc_t));
+	proc_t* pinf = calloc(1, sizeof(proc_t));
 	pid_t current = pid;
 
 	while(current!=(pid_t)0 && current!=(pid_t)1 && current!=target){
@@ -3090,14 +3089,14 @@ char* check_ssh_session(pid_t process){
  const char *dir = "/proc";
  char filename_qfd[100] ;
  pid_t pid;
- proc_t process_info;
- memset(&process_info, 0, sizeof(proc_t));
+ proc_t* process_info = calloc(1, sizeof(proc_t));
  struct stat stbuf;
  char* res = 0;
 
  if ((dfd = opendir(dir)) == NULL)
  {
   fprintf(stderr, "Can't open %s\n", dir);
+  freeproc(process_info);
   return 0;
  }
 
@@ -3112,10 +3111,10 @@ char* check_ssh_session(pid_t process){
   }
   if ( ((stbuf.st_mode & S_IFMT) == S_IFDIR) && str_to_pid(dp->d_name, &pid))
   {
-	get_proc_info(pid, &process_info);	
-	if(!process_info.cmdline)
+	get_proc_info(pid, process_info);	
+	if(!process_info->cmdline)
 		continue;
-	char* cmdline = *process_info.cmdline;
+	char* cmdline = *process_info->cmdline;
 	
 	if(strncmp("ssh ", cmdline, 4) == 0 && check_parents(pid, process)){
 		res = calloc(strlen(cmdline)+1, sizeof(char));
@@ -3124,20 +3123,7 @@ char* check_ssh_session(pid_t process){
 	
   }
  }
- if (process_info.environ)  free((void*)*process_info.environ);
- if (process_info.cmdline)  free((void*)*process_info.cmdline);
- if (process_info.cgroup)   free((void*)*process_info.cgroup);
- if (process_info.cgname)   free(process_info.cgname);
- if (process_info.supgid)   free(process_info.supgid);
- if (process_info.supgrp)   free(process_info.supgrp);
- if (process_info.sd_mach)  free(process_info.sd_mach);
- if (process_info.sd_ouid)  free(process_info.sd_ouid);
- if (process_info.sd_seat)  free(process_info.sd_seat);
- if (process_info.sd_sess)  free(process_info.sd_sess);
- if (process_info.sd_slice) free(process_info.sd_slice);
- if (process_info.sd_unit)  free(process_info.sd_unit);
- if (process_info.sd_uunit) free(process_info.sd_uunit);
-
+ freeproc(process_info);
  free(dfd);
  return res;
 }
