@@ -10,6 +10,7 @@ static const unsigned int gappiv    = 7;       /* vert inner gap between windows
 static const unsigned int gappoh    = 7;       /* horiz outer gap between windows and screen edge */
 static const unsigned int gappov    = 7;       /* vert outer gap between windows and screen edge */
 static const int smartgaps          = 0;        /* 1 means no outer gap when there is only one window */
+static const int swallowfloating    = 0;        /* 1 means swallow floating windows by default */
 static const char *fonts[]          = { "FontAwesome:size=10" };
 static const char dmenufont[]       = "monospace:size=10";
 static const char col_gray1[]       = "#222222";
@@ -33,9 +34,12 @@ static const Rule rules[] = {
 	 *	WM_CLASS(STRING) = instance, class
 	 *	WM_NAME(STRING) = title
 	 */
-	/* class      instance    title       tags mask     isfloating   monitor */
-	{ "Gimp",     NULL,       NULL,       0,            1,           -1 },
-	{ "Firefox",  NULL,       NULL,       1 << 8,       0,           -1 },
+	/* class     instance  title           tags mask  isfloating  isterminal  noswallow  monitor */
+	{ "Gimp",    NULL,     NULL,           0,         1,          0,           0,        -1 },
+	{ "Firefox", NULL,     NULL,           1 << 8,    0,          0,          -1,        -1 },
+	{ "qtcreator",NULL,     NULL,          0,    	  0,          0,          -1,        -1 },
+	{ "Alacritty",NULL,     NULL,          0,         0,          1,           0,        -1 },
+	{ NULL,      NULL,     "Event Tester", 0,         0,          0,           1,        -1 }, /* xev */
 };
 
 /* layout(s) */
