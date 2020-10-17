@@ -70,11 +70,11 @@ static const Layout layouts[] = {
 #define STACKKEYS(MOD,ACTION) \
        { MOD, XK_k,     ACTION##stack, {.i = INC(+1) } }, \
        { MOD, XK_j,     ACTION##stack, {.i = INC(-1) } }, \
-       { MOD, XK_grave, ACTION##stack, {.i = PREVSEL } }, \
-       { MOD, XK_q,     ACTION##stack, {.i = 0 } }, \
-       { MOD, XK_a,     ACTION##stack, {.i = 1 } }, \
-       { MOD, XK_z,     ACTION##stack, {.i = 2 } }, \
-       { MOD, XK_x,     ACTION##stack, {.i = -1 } },
+       //{ MOD, XK_grave, ACTION##stack, {.i = PREVSEL } }, \
+       //{ MOD, XK_q,     ACTION##stack, {.i = 0 } }, \
+       //{ MOD, XK_a,     ACTION##stack, {.i = 1 } }, \
+       //{ MOD, XK_z,     ACTION##stack, {.i = 2 } }, \
+       //{ MOD, XK_x,     ACTION##stack, {.i = -1 } },
 
 /* helper for spawning shell commands in the pre dwm-5.0 fashion */
 #define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
@@ -95,7 +95,7 @@ static Key keys[] = {
 	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
 	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
 	{ MODKEY,                       XK_Tab,    view,           {0} },
-	{ MODKEY,             			XK_q,      killclient,     {0} },
+	{ MODKEY,             		XK_q,      killclient,     {0} },
 	{ MODKEY|ShiftMask,             XK_t,      setlayout,      {.v = &layouts[0]} },
 	{ MODKEY|ShiftMask,             XK_f,      setlayout,      {.v = &layouts[1]} },
 	{ MODKEY|ShiftMask,             XK_m,      setlayout,      {.v = &layouts[2]} },	
@@ -104,7 +104,7 @@ static Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_d,      setlayout,      {.v = &layouts[5]} },
 	{ MODKEY,                       XK_space,  setlayout,      {0} },
 	{ MODKEY|ShiftMask,             XK_space,  togglefloating, {0} },
-	{ MODKEY,             			XK_f,      togglefullscr,  {0} },
+	{ MODKEY,             		XK_f,      togglefullscr,  {0} },
 	{ MODKEY|Mod4Mask,              XK_h,      incrgaps,       {.i = +1 } },
 	{ MODKEY|Mod4Mask,              XK_l,      incrgaps,       {.i = -1 } },
 	{ MODKEY|Mod4Mask|ShiftMask,    XK_h,      incrogaps,      {.i = +1 } },
@@ -128,8 +128,9 @@ static Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
 	{ MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
 	{ MODKEY|ShiftMask,             XK_w, 	   spawn,          SHCMD("/usr/sbin/wallchanger") },
-	{ MODKEY|ShiftMask,				XK_KP_Add, 		changeopacity,	{.f = +0.1}},
-	{ MODKEY|ShiftMask,				XK_KP_Subtract, changeopacity,  {.f = -0.1}},
+	{ MODKEY|ShiftMask,		XK_KP_Divide, spawn,	   SHCMD("emojimenu")},
+	{ MODKEY|ShiftMask,		XK_KP_Add, changeopacity,	{.f = +0.1}},
+	{ MODKEY|ShiftMask,		XK_KP_Subtract, changeopacity,  {.f = -0.1}},
 	TAGKEYS(                        XK_1,                      0)
 	TAGKEYS(                        XK_2,                      1)
 	TAGKEYS(                        XK_3,                      2)
