@@ -92,7 +92,7 @@ enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
 enum { SchemeNorm, SchemeSel }; /* color schemes */
 enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
-       NetWMWindowTypeDialog, NetClientList, NetLast, NetWMWindowsOpacity }; /* EWMH atoms */
+       NetWMWindowTypeDialog, NetClientList, NetWMWindowsOpacity, NetLast }; /* EWMH atoms */
 enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms */
 enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
 ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
@@ -250,6 +250,7 @@ static void resizeclient(Client *c, int x, int y, int w, int h);
 static void resizemouse(const Arg *arg);
 static void restack(Monitor *m);
 static void run(void);
+static void swallow(Client *p, Client *c);
 static void spiral(Monitor *m);
 static void scan(void);
 static int sendevent(Client *c, Atom proto);
@@ -275,6 +276,7 @@ static void togglefloating(const Arg *arg);
 static void togglefullscr(const Arg *arg);
 static void toggletag(const Arg *arg);
 static void toggleview(const Arg *arg);
+static void unswallow(Client *c);
 static void unfocus(Client *c, int setfocus);
 static void unmanage(Client *c, int destroyed);
 static void unmapnotify(XEvent *e);
@@ -1162,6 +1164,36 @@ focusmon(const Arg *arg)
 	focus(NULL);
 }
 
+int
+stackpos(const Arg *arg) {
+       int n, i;
+       Client *c, *l;
+
+       if(!selmon->clients)
+               return -1;
+
+       if(arg->i == PREVSEL) {
+               for(l = selmon->stack; l && (!ISVISIBLE(l) || l == selmon->sel); l = l->snext);
+               if(!l)
+                       return -1;
+               for(i = 0, c = selmon->clients; c != l; i += ISVISIBLE(c) ? 1 : 0, c = c->next);
+               return i;
+       }
+       else if(ISINC(arg->i)) {
+               if(!selmon->sel)
+                       return -1;
+               for(i = 0, c = selmon->clients; c != selmon->sel; i += ISVISIBLE(c) ? 1 : 0, c = c->next);
+               for(n = i; c; n += ISVISIBLE(c) ? 1 : 0, c = c->next);
+               return MOD(i + GETINC(arg->i), n);
+       }
+       else if(arg->i < 0) {
+               for(i = 0, c = selmon->clients; c; i += ISVISIBLE(c) ? 1 : 0, c = c->next);
+               return MAX(i + arg->i, 0);
+       }
+       else
+               return arg->i;
+}
+
 void
 focusstack(const Arg *arg)
 {
@@ -1769,35 +1801,6 @@ pushstack(const Arg *arg) {
 }
 
 
-int
-stackpos(const Arg *arg) {
-       int n, i;
-       Client *c, *l;
-
-       if(!selmon->clients)
-               return -1;
-
-       if(arg->i == PREVSEL) {
-               for(l = selmon->stack; l && (!ISVISIBLE(l) || l == selmon->sel); l = l->snext);
-               if(!l)
-                       return -1;
-               for(i = 0, c = selmon->clients; c != l; i += ISVISIBLE(c) ? 1 : 0, c = c->next);
-               return i;
-       }
-       else if(ISINC(arg->i)) {
-               if(!selmon->sel)
-                       return -1;
-               for(i = 0, c = selmon->clients; c != selmon->sel; i += ISVISIBLE(c) ? 1 : 0, c = c->next);
-               for(n = i; c; n += ISVISIBLE(c) ? 1 : 0, c = c->next);
-               return MOD(i + GETINC(arg->i), n);
-       }
-       else if(arg->i < 0) {
-               for(i = 0, c = selmon->clients; c; i += ISVISIBLE(c) ? 1 : 0, c = c->next);
-               return MAX(i + arg->i, 0);
-       }
-       else
-               return arg->i;
-}
 
 
 void
@@ -3150,7 +3153,7 @@ char* check_ssh_session(pid_t process){
  struct dirent *dp;
  DIR *dfd;
  const char *dir = "/proc";
- char filename_qfd[100] ;
+ char filename_qfd[262] ;
  pid_t pid;
  proc_t* process_info = calloc(1, sizeof(proc_t));
  struct stat stbuf;
