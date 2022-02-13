@@ -926,6 +926,9 @@ dirtomon(int dir)
 void
 drawbar(Monitor *m)
 {
+	if(!m->showbar)
+	    return;
+
 	int x, w, tw = 0;
 	int boxs = drw->fonts->h / 9;
 	int boxw = drw->fonts->h / 6 + 2;
