@@ -43,7 +43,7 @@ static const Rule rules[] = {
 	{ "QtCreator",NULL,     NULL,          	            0,    	  0,          0,            0,        	solidopacity,			-1 },
 	{ "Alacritty",NULL,     NULL,                       0,        	  0,          1,            1,        	defaultopacity,			-1 },
 	{ "code-oss", NULL,	NULL,                       0,	      	  0,	      0,	    0,		solidopacity,			-1},
-	{ "qemu",NULL,     NULL,                0,        	  0,          0,            1,        	solidopacity,			-1 },
+	{ "VSCodium",NULL,     NULL,                0,        	  0,          0,            0,        	solidopacity,			-1 },
 };
 
 /* layout(s) */
