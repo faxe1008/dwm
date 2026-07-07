@@ -27,10 +27,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <dirent.h>
 #include <proc/readproc.h>
 #include <X11/cursorfont.h>
 #include <X11/keysym.h>
@@ -130,6 +132,7 @@ struct Client {
 	Monitor *mon;
 	Window win;
 	double opacity;
+	double unfocusopacity;
 };
 
 typedef struct {
@@ -184,6 +187,7 @@ typedef struct {
 	int isterminal;
 	int noswallow;
 	double opacity;
+	double unfocusopacity;
 	int monitor;
 } Rule;
 
@@ -321,6 +325,8 @@ static pid_t winpid(Window w);
 
 static int str_to_pid(char* s, pid_t* pid);
 static char* check_ssh_session(pid_t process);
+static int is_shell_cmdline(const char *cmdline);
+static char* check_local_cwd(pid_t process);
 static int get_proc_info(pid_t pid, proc_t* proc_info);
 static int check_parents(pid_t pid, pid_t target);
 
@@ -383,7 +389,8 @@ applyrules(Client *c)
 	/* rule matching */
 	c->isfloating = 0;
 	c->tags = 0;
-	c->opacity=defaultopacity;
+	c->opacity=activeopacity;
+	c->unfocusopacity=inactiveopacity;
 	XGetClassHint(dpy, c->win, &ch);
 	class    = ch.res_class ? ch.res_class : broken;
 	instance = ch.res_name  ? ch.res_name  : broken;
@@ -397,6 +404,7 @@ applyrules(Client *c)
 			c->isterminal = r->isterminal;
 			c->noswallow  = r->noswallow;
 			c->opacity 	  = r->opacity;
+			c->unfocusopacity = r->unfocusopacity;
 			c->tags |= r->tags;
 			for (m = mons; m && m->num != r->monitor; m = m->next);
 			if (m)
@@ -1136,6 +1144,11 @@ focus(Client *c)
 		grabbuttons(c, 1);
 		XSetWindowBorder(dpy, c->win, scheme[SchemeSel][ColBorder].pixel);
 		setfocus(c);
+		if(c->opacity > 1.0)
+			c->opacity = 1.0;
+		if(c->opacity < 0.0)
+			c->opacity = 0.0;
+		opacity(c, c->opacity);
 	} else {
 		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
 		XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
@@ -2118,7 +2131,15 @@ void spawn_ssh_aware(const Arg *arg)
 			spawn(&a);
 			free(ssh_cmdline);
 		}else{
-		        spawn(arg);
+			char *cwd = check_local_cwd(selmon->sel->pid);
+			if (cwd) {
+				const char* localcmd[] = { "/usr/bin/alacritty", "--working-directory", cwd, NULL };
+				Arg a = {.v = localcmd};
+				spawn(&a);
+				free(cwd);
+			} else {
+				spawn(arg);
+			}
 		}
 	}else{
 		spawn(arg);
@@ -2259,6 +2280,11 @@ unfocus(Client *c, int setfocus)
 		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
 		XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
 	}
+	if(c->unfocusopacity > 1.0)
+		c->unfocusopacity = 1.0;
+	if(c->unfocusopacity < 0.0)
+		c->unfocusopacity = 0.1;
+	opacity(c, c->unfocusopacity);
 }
 
 void
@@ -3195,8 +3221,100 @@ char* check_ssh_session(pid_t process){
   }
  }
  freeproc(process_info);
- free(dfd);
+ closedir(dfd);
  return res;
+}
+
+static int is_shell_cmdline(const char *cmdline)
+{
+	char exe[128];
+	const char *base;
+	size_t i;
+
+	if (!cmdline || !*cmdline)
+		return 0;
+
+	for (i = 0; i < sizeof(exe) - 1 && cmdline[i] && cmdline[i] != ' '; i++)
+		exe[i] = cmdline[i];
+	exe[i] = '\0';
+
+	base = strrchr(exe, '/');
+	base = base ? base + 1 : exe;
+
+	return !strcmp(base, "bash") || !strcmp(base, "zsh") ||
+		!strcmp(base, "fish") || !strcmp(base, "sh") ||
+		!strcmp(base, "dash") || !strcmp(base, "ksh");
+}
+
+static char* check_local_cwd(pid_t process)
+{
+	struct dirent *dp;
+	DIR *dfd;
+	const char *dir = "/proc";
+	char proc_path[262], cwd_path[64], target[PATH_MAX];
+	pid_t pid, best_shell_pid = 0, best_pid = 0;
+	proc_t *process_info = calloc(1, sizeof(proc_t));
+	struct stat stbuf;
+	char *best_shell_cwd = NULL, *best_cwd = NULL;
+	ssize_t len;
+
+	if (!process_info)
+		return NULL;
+
+	if ((dfd = opendir(dir)) == NULL) {
+		free(process_info);
+		return NULL;
+	}
+
+	while ((dp = readdir(dfd)) != NULL) {
+		snprintf(proc_path, sizeof(proc_path), "%s/%s", dir, dp->d_name);
+		if (stat(proc_path, &stbuf) == -1)
+			continue;
+		if (((stbuf.st_mode & S_IFMT) != S_IFDIR) || !str_to_pid(dp->d_name, &pid))
+			continue;
+		if (!check_parents(pid, process))
+			continue;
+
+		get_proc_info(pid, process_info);
+		if (!process_info->cmdline)
+			continue;
+		if (strncmp("ssh ", *process_info->cmdline, 4) == 0)
+			continue;
+
+		snprintf(cwd_path, sizeof(cwd_path), "/proc/%d/cwd", pid);
+		len = readlink(cwd_path, target, sizeof(target) - 1);
+		if (len <= 0)
+			continue;
+		target[len] = '\0';
+
+		if (is_shell_cmdline(*process_info->cmdline)) {
+			if (pid >= best_shell_pid) {
+				free(best_shell_cwd);
+				best_shell_cwd = calloc(len + 1, sizeof(char));
+				if (best_shell_cwd) {
+					strcpy(best_shell_cwd, target);
+					best_shell_pid = pid;
+				}
+			}
+		} else if (pid >= best_pid) {
+			free(best_cwd);
+			best_cwd = calloc(len + 1, sizeof(char));
+			if (best_cwd) {
+				strcpy(best_cwd, target);
+				best_pid = pid;
+			}
+		}
+	}
+
+	freeproc(process_info);
+	closedir(dfd);
+
+	if (best_shell_cwd) {
+		free(best_cwd);
+		return best_shell_cwd;
+	}
+
+	return best_cwd;
 }
 
 int

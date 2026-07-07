@@ -11,6 +11,8 @@ static const unsigned int gappoh    = 7;       /* horiz outer gap between window
 static const unsigned int gappov    = 7;       /* vert outer gap between windows and screen edge */
 static const int smartgaps          = 0;        /* 1 means no outer gap when there is only one window */
 static const int swallowfloating    = 0;        /* 1 means swallow floating windows by default */
+static const double activeopacity   = 0.9f;     /* Window opacity when it's focused (0 <= opacity <= 1) */
+static const double inactiveopacity = 0.75f;     /* Window opacity when it's inactive (0 <= opacity <= 1) */
 static const char *fonts[]          = { 
 	"JetBrainsMono:size=10:antialias=true",
 	"JoyPixels:pixelsize=10:antialias=true:autohint=true"
@@ -22,7 +24,6 @@ static char normfgcolor[]           = "#bbbbbb";
 static char selfgcolor[]            = "#eeeeee";
 static char selbgcolor[]			= "#005577";
 static char selbordercolor[]        = "#005577";
-static const double defaultopacity  = 0.89;
 static const char dmenu_lines[]	    = "15";
 static const char *colors[][3]      = {
 	/*               fg         bg         border   */
@@ -39,11 +40,11 @@ static const Rule rules[] = {
 	 *	WM_NAME(STRING) = title
 	 */
 	/* class     instance  title           		tags mask  isfloating  isterminal  noswallow 	opacity 			monitor */
-	{ "firefox",  NULL,     NULL,                       0,    	  0,          0,            0,        	solidopacity,			-1 },
-	{ "QtCreator",NULL,     NULL,          	            0,    	  0,          0,            0,        	solidopacity,			-1 },
-	{ "Alacritty",NULL,     NULL,                       0,        	  0,          1,            1,        	defaultopacity,			-1 },
-	{ "code-oss", NULL,	NULL,                       0,	      	  0,	      0,	    0,		solidopacity,			-1},
-	{ "qemu",NULL,     NULL,                0,        	  0,          0,            1,        	solidopacity,			-1 },
+	{ "firefox",  NULL,     NULL,                       0,    	  0,          0,            0,        	solidopacity,    solidopacity,			-1 },
+	{ "QtCreator",NULL,     NULL,          	            0,    	  0,          0,            0,        	solidopacity,    0.9,			-1 },
+	{ "Alacritty",NULL,     NULL,                       0,        	  0,          1,            1,      solidopacity,    0.9,			-1 },
+	{ "code-oss", NULL,	NULL,                       0,	      	  0,	      0,	    0,		solidopacity, 0.9,			-1},
+	{ "qemu",NULL,     NULL,                0,        	  0,          0,            1,        	solidopacity, solidopacity,			-1 },
 };
 
 /* layout(s) */
